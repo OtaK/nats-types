@@ -119,7 +119,7 @@ impl FromStr for ProtocolMessage {
         } else if s.starts_with("+OK") {
             Ok(ProtocolMessage::Ok)
         } else if s.starts_with("-ERR") {
-            match parser::parse_err_header(s) {
+            match parser::parse_err_header(s.as_bytes()) {
                 Some(h) => Ok(ProtocolMessage::Error(h.message)),
                 None => Err(NatsParseError {
                     msg: "Failed to parse protocol message of type ERR".to_string(),
@@ -345,7 +345,7 @@ impl FromStr for DeliveredMessage {
     type Err = NatsParseError;
 
     fn from_str(s: &str) -> Result<Self, <Self as FromStr>::Err> {
-        let split = parser::split_header_and_payload(s);
+        let split = parser::split_header_and_payload(s.as_bytes());
         match split {
             None => Err(NatsParseError {
                 msg: "Failed to parse message - possibly not a 2-line message".to_string(),
@@ -358,7 +358,7 @@ impl FromStr for DeliveredMessage {
                         subscription_id: r.sid,
                         reply_to: r.reply_to,
                         payload_size: r.message_len,
-                        payload: split.1,
+                        payload: split.1.into(),
                     }),
                     None => Err(NatsParseError {
                         msg: "Failed to parse delivered message".to_string(),
@@ -409,7 +409,7 @@ impl FromStr for SubscribeMessage {
     type Err = NatsParseError;
 
     fn from_str(s: &str) -> Result<Self, <Self as FromStr>::Err> {
-        let res = parser::parse_sub_header(s);
+        let res = parser::parse_sub_header(s.as_bytes());
         match res {
             Some(r) => Ok(SubscribeMessage {
                 subscription_id: r.sid,
@@ -457,7 +457,7 @@ impl FromStr for UnsubscribeMessage {
     type Err = NatsParseError;
 
     fn from_str(s: &str) -> Result<Self, <Self as FromStr>::Err> {
-        let res = parser::parse_unsub_header(s);
+        let res = parser::parse_unsub_header(s.as_bytes());
         match res {
             Some(r) => Ok(UnsubscribeMessage {
                 subscription_id: r.sid,
@@ -521,7 +521,7 @@ impl FromStr for PublishMessage {
     type Err = NatsParseError;
 
     fn from_str(s: &str) -> Result<Self, <Self as FromStr>::Err> {
-        let split = parser::split_header_and_payload(s);
+        let split = parser::split_header_and_payload(s.as_bytes());
         match split {
             None => Err(NatsParseError {
                 msg: "Failed to parse Publish message - possibly not a 2-line message".to_string(),
@@ -533,7 +533,7 @@ impl FromStr for PublishMessage {
                         subject: r.subject,
                         reply_to: r.reply_to,
                         payload_size: r.message_len,
-                        payload: split.1,
+                        payload: split.1.into(),
                     }),
                     None => Err(NatsParseError {
                         msg: "Failed to parse Publish message".to_string(),
